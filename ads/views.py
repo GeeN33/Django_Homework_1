@@ -53,7 +53,10 @@ class AdDetailView(DetailView):
     model = Ads
     def get(self, request, *args, **kwargs):
 
-        ad = self.get_object()
+        try:
+            ad = self.get_object()
+        except:
+            return JsonResponse({"error": "there is no such id in the ads"}, status=404)
 
         return JsonResponse({
                 "id": ad.id,
@@ -90,7 +93,11 @@ class CatView(View):
 class CatDetailView(DetailView):
     model = Categories
     def get(self, request, *args, **kwargs):
-            category = self.get_object()
+            try:
+                category = self.get_object()
+            except :
+                return JsonResponse({"error": "there is no such id in the category"}, status=404)
+
             return JsonResponse({
                     "id": category.id,
                     "name": category.name
