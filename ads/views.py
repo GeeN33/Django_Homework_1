@@ -2,7 +2,7 @@ import json
 
 from django.conf import settings
 from django.core.paginator import Paginator
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.http import JsonResponse, response, HttpResponse
 from django.shortcuts import render
 from django.utils.decorators import method_decorator
@@ -148,23 +148,24 @@ class UsersZView(ListView):
 
     def get(self, request, *args, **kwargs):
         super().get(request, *args, **kwargs)
+        self.object_list = self.object_list.annotate(total_ads=Count('ad', filter=Q(ad__is_published=True)))
+
         paginator = Paginator(self.object_list, settings.TOTAL_ON_PAGE)
         page_number = request.GET.get("page")
         page_obj = paginator.get_page(page_number)
 
         users = []
         for user in page_obj:
-            Ad_count = Ad.objects.filter(author_id=user, is_published=True).count()
-            if Ad_count > 0:
-                users.append({
-                    "id": user.id,
-                    "username": user.username,
-                    "first_name": user.first_name,
-                    "last_name": user.last_name,
-                    "role": user.role,
-                    "age": user.age,
-                    "locations": list(user.location_id.all().values_list("name", flat=True)),
-                    "total_ads": Ad_count
+            # total_ads = Ad.objects.filter(author_id=user, is_published=True).count()
+            users.append({
+                "id": user.id,
+                "username": user.username,
+                "first_name": user.first_name,
+                "last_name": user.last_name,
+                "role": user.role,
+                "age": user.age,
+                "locations": list(user.location_id.all().values_list("name", flat=True)),
+                "total_ads": user.total_ads
                 })
         response = {
             "items": users,
