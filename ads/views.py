@@ -1,5 +1,4 @@
 import json
-
 from django.conf import settings
 from django.core.paginator import Paginator
 from django.db.models import Count, Q
@@ -9,8 +8,9 @@ from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import DetailView, ListView, CreateView, UpdateView, DeleteView
-
 from ads.models import Ad, Categories, Users, Location
+
+
 
 def index(request):
     if request.method == "GET":
@@ -45,6 +45,7 @@ class UsersListView(ListView):
         }
 
         return JsonResponse(response, safe=False, json_dumps_params={"ensure_ascii": True})
+
 class UsersDetailView(DetailView):
     model = Users
     def get(self, request, *args, **kwargs):
@@ -62,6 +63,7 @@ class UsersDetailView(DetailView):
             "age": user.age,
             "locations": list(user.location_id.all().values_list("name", flat=True))
            }, safe=False, json_dumps_params={"ensure_ascii": True})
+
 @method_decorator(csrf_exempt, name="dispatch")
 class UsersCreateView(CreateView):
      model = Users
@@ -94,6 +96,7 @@ class UsersCreateView(CreateView):
               "age": user.age,
               "locations": list(user.location_id.all().values_list("name", flat=True))
           }, safe=False, json_dumps_params={"ensure_ascii": True})
+
 @method_decorator(csrf_exempt, name="dispatch")
 class UsersUpdateView(UpdateView):
     model = Users
@@ -130,6 +133,7 @@ class UsersUpdateView(UpdateView):
           "age": self.object.age,
           "locations": list(self.object.location_id.all().values_list("name", flat=True))
         }, safe=False, json_dumps_params={"ensure_ascii": True})
+
 @method_decorator(csrf_exempt, name="dispatch")
 class UsersDeleteView(DeleteView):
      model = Users
@@ -194,6 +198,7 @@ class CatListView(ListView):
                 "name": cat.name
             })
         return JsonResponse(response, safe=False, json_dumps_params={"ensure_ascii": True})
+
 class CatDetailView(DetailView):
     model = Categories
     def get(self, request, *args, **kwargs):
@@ -206,6 +211,22 @@ class CatDetailView(DetailView):
                     "id": category.id,
                     "name": category.name
                 }, safe=False, json_dumps_params={"ensure_ascii": True})
+
+@method_decorator(csrf_exempt, name="dispatch")
+class CatCreateView(CreateView):
+     model = Categories
+     def post(self, request, *args, **kwargs):
+          cat_data = json.loads(request.body)
+
+          cat = Categories.objects.create(
+               name=cat_data["name"]
+          )
+
+          return JsonResponse({
+              "id": cat.id,
+              "name": cat.name
+          }, safe=False, json_dumps_params={"ensure_ascii": True})
+
 @method_decorator(csrf_exempt, name="dispatch")
 class CatUpdateView(UpdateView):
     model = Categories
@@ -225,6 +246,7 @@ class CatUpdateView(UpdateView):
           "id": self.object.id,
           "name": self.object.name
         }, safe=False, json_dumps_params={"ensure_ascii": True})
+
 @method_decorator(csrf_exempt, name="dispatch")
 class CatDeleteView(DeleteView):
      model = Categories
@@ -269,6 +291,7 @@ class AdListView(ListView):
             "num_pages": paginator.num_pages
         }
         return JsonResponse(response, safe=False, json_dumps_params={"ensure_ascii": True})
+
 @method_decorator(csrf_exempt, name="dispatch")
 class AdUpdateView(UpdateView):
     model = Ad
@@ -302,6 +325,7 @@ class AdUpdateView(UpdateView):
           "image": self.object.image.url if self.object.image else ""
 
         }, safe=False, json_dumps_params={"ensure_ascii": True})
+
 @method_decorator(csrf_exempt, name="dispatch")
 class AdDeleteView(DeleteView):
      model = Ad
@@ -314,24 +338,59 @@ class AdDeleteView(DeleteView):
 
          super().delete( request, *args, **kwargs)
          return JsonResponse({"status": "ok"}, status=200)
+
 class AdDetailView(DetailView):
     model = Ad
     def get(self, request, *args, **kwargs):
-
         try:
-            ad = self.get_object()
-        except:
-            return JsonResponse({"error": "there is no such id in the ads"}, status=404)
+          ad = Ad.objects.get(pk=kwargs['pk'])
+        except Ad.DoesNotExist:
+            return JsonResponse({"error": "there is no such id in the ad"}, status=404)
 
         return JsonResponse({
-                "id": ad.id,
-                "name": ad.name,
-                "author": ad.author,
-                "price": ad.price,
-                "description": ad.description,
-                "address": ad.address,
-                "is_published": ad.is_published
+            "id": ad.id,
+            "name": ad.name,
+            "author_id": ad.author_id_id,
+            "author": Users.objects.get(id=ad.author_id_id).first_name,
+            "price": ad.price,
+            "description": ad.description,
+            "is_published": ad.is_published,
+            "category_id": ad.category_id_id,
+            "image": ad.image.url if ad.image else ""
            }, safe=False, json_dumps_params={"ensure_ascii": True})
+
+@method_decorator(csrf_exempt, name="dispatch")
+class AdCreateView(CreateView):
+     model = Ad
+     def post(self, request, *args, **kwargs):
+          ad_data = json.loads(request.body)
+          try:
+              author_obj = Users.objects.get(id=ad_data["author_id"])
+          except Users.DoesNotExist:
+              return JsonResponse({"error": "Users not"}, status=404)
+          try:
+              category_obj = Categories.objects.get(id=ad_data["category_id"])
+          except Categories.DoesNotExist:
+              return JsonResponse({"error": "Categories not"}, status=404)
+
+          ad = Ad.objects.create(
+              name = ad_data["name"],
+              author_id = author_obj,
+              price = ad_data["price"],
+              description = ad_data["description"],
+              is_published = ad_data["is_published"],
+              category_id = category_obj
+          )
+
+          return JsonResponse({
+              "id": ad.id,
+              "name": ad.name,
+              "author_id": ad.author_id_id,
+              "price": ad.price,
+              "description" : ad.description,
+              "is_published" : ad.is_published,
+              "category_id" : ad.category_id_id
+          }, safe=False, json_dumps_params={"ensure_ascii": True})
 
 @method_decorator(csrf_exempt, name="dispatch")
 class AdImageView(UpdateView):
