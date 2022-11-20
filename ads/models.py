@@ -12,14 +12,13 @@ class Location(models.Model):
     def __str__(self):
         return self.name
 class Users(models.Model):
-    first_name = models.SlugField(max_length=50)
+    first_name = models.CharField(max_length=50)
     last_name = models.CharField(max_length=50)
-    username = models.SlugField(max_length=50)
+    username = models.CharField(max_length=50)
     password = models.CharField(max_length=50)
     role = models.CharField(max_length=50)
     age = models.IntegerField()
-    # location_id = models.ForeignKey('Location', on_delete=models.CASCADE, verbose_name='Location', null=True)
-    location_id = models.ManyToManyField(Location)
+    location = models.ManyToManyField(Location)
     def __str__(self):
         return self.first_name
     class Meta:
@@ -27,7 +26,7 @@ class Users(models.Model):
        verbose_name_plural = 'Пользователи'
        ordering = ["username"]
 class Categories(models.Model):
-    name = models.SlugField(max_length=150)
+    name = models.CharField(max_length=150)
 
     def __str__(self):
         return self.name
@@ -36,12 +35,12 @@ class Categories(models.Model):
        verbose_name_plural = 'Категории'
 class Ad(models.Model):
     name = models.SlugField(max_length=150)
-    author_id = models.ForeignKey(Users, on_delete=models.CASCADE, verbose_name = 'Пользователь', null=True)
+    author = models.ForeignKey(Users, on_delete=models.CASCADE, verbose_name = 'Пользователь', null=True)
     price = models.IntegerField()
     description = models.CharField(max_length=2000)
     is_published = models.BooleanField()
     image = models.ImageField(upload_to='images/', null=True, blank=True)
-    category_id = models.ForeignKey(Categories, on_delete=models.CASCADE, verbose_name='Категория', null=True)
+    category = models.ForeignKey(Categories, on_delete=models.CASCADE, verbose_name='Категория', null=True)
     def __str__(self):
         return self.name
 

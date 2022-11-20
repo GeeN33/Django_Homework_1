@@ -28,7 +28,7 @@ class Command(BaseCommand):
                 user.age = row['age']
                 # user.location_id = Location.objects.get(id=row['location_id'])
                 user.save()
-                user.location_id.add(Location.objects.get(id=row['location_id']))
+                user.location.add(Location.objects.get(id=row['location_id']))
         print("Command load_data user.csv")
 
         with open('datasets/category.csv', newline='', encoding='utf-8') as f:
@@ -45,7 +45,7 @@ class Command(BaseCommand):
                 ad = Ad()
                 ad.name = row['name']
                 # ad.author_id = row['author_id']
-                ad.author_id = Users.objects.get(id=row['author_id'])
+                ad.author = Users.objects.get(id=row['author_id'])
                 ad.price = row['price']
                 ad.description = row['description']
                 if row['is_published'] == 'TRUE':
@@ -54,6 +54,6 @@ class Command(BaseCommand):
                     ad.is_published = False
                 ad.image = row['image']
                 # ad.category_id = row['category_id']
-                ad.category_id = Categories.objects.get(id=row['category_id'])
+                ad.category = Categories.objects.get(id=row['category_id'])
                 ad.save()
         print("Command load_data ads.csv")
