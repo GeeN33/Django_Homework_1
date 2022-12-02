@@ -7,11 +7,13 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import DetailView, ListView, CreateView, UpdateView, DeleteView
 from rest_framework.generics import ListAPIView, CreateAPIView, RetrieveAPIView, UpdateAPIView, DestroyAPIView
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.viewsets import ModelViewSet
 
-from ads.models import Ad, Categories, Users, Location
+from ads.models import Ad, Categories, Users, Location, Selection
 from ads.serializers import LocationSerializers, UsersSerializers, UsersCreateSerializers, CategoriesSerializers, \
-    UsersUpdateSerializers, UsersDestroySerializers, AdSerializers
+    UsersUpdateSerializers, UsersDestroySerializers, AdSerializers, SelectionCreateSerializers, SelectionSerializers, \
+    SelectionDetaiSerializers, SelectionUpdateSerializers, SelectionDestroySerializers
 
 
 def index(request):
@@ -77,6 +79,7 @@ class UsersZView(ListView):
 class AdListView(ListAPIView):
     queryset = Ad.objects.all()
     serializer_class = AdSerializers
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
 
@@ -107,7 +110,6 @@ class AdListView(ListAPIView):
             )
 
         return super().get(self, request, *args, **kwargs)
-
 
 @method_decorator(csrf_exempt, name="dispatch")
 class AdUpdateView(UpdateView):
@@ -243,3 +245,25 @@ class CategoriesViewSet(ModelViewSet):
 class LocationViewSet(ModelViewSet):
     queryset = Location.objects.all()
     serializer_class = LocationSerializers
+
+class SelectionCreateView(CreateAPIView):
+    queryset = Selection.objects.all()
+    serializer_class = SelectionCreateSerializers
+    permission_classes = [IsAuthenticated]
+
+class SelectionListView(ListAPIView):
+    queryset = Selection.objects.all()
+    serializer_class = SelectionSerializers
+
+class SelectionDetailView(RetrieveAPIView):
+    queryset = Selection.objects.all()
+    serializer_class = SelectionDetaiSerializers
+
+class SelectionUpdateView(UpdateAPIView):
+    queryset = Selection.objects.all()
+    serializer_class = SelectionUpdateSerializers
+
+class SelectionDeleteView(DestroyAPIView):
+    queryset = Selection.objects.all()
+    serializer_class = SelectionDestroySerializers
+
