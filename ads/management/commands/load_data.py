@@ -1,8 +1,8 @@
 import csv
 
 from django.core.management.base import BaseCommand
-
-from ads.models import Categories, Location, Users, Ad
+from authentification.models import User
+from ads.models import Categories, Location, Ad
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
@@ -19,7 +19,7 @@ class Command(BaseCommand):
         with open('datasets/user.csv', newline='', encoding='utf-8') as f:
             reader = csv.DictReader(f, delimiter=',', skipinitialspace=True)
             for row in reader:
-                user = Users()
+                user = User()
                 user.first_name = row['first_name']
                 user.last_name = row['last_name']
                 user.username = row['username']
@@ -45,7 +45,7 @@ class Command(BaseCommand):
                 ad = Ad()
                 ad.name = row['name']
                 # ad.author_id = row['author_id']
-                ad.author = Users.objects.get(id=row['author_id'])
+                ad.author = User.objects.get(id=row['author_id'])
                 ad.price = row['price']
                 ad.description = row['description']
                 if row['is_published'] == 'TRUE':

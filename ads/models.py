@@ -1,4 +1,7 @@
 from django.db import models
+from django.contrib.auth.models import AbstractUser
+
+
 
 class Location(models.Model):
     name = models.CharField(max_length=40)
@@ -11,20 +14,7 @@ class Location(models.Model):
 
     def __str__(self):
         return self.name
-class Users(models.Model):
-    first_name = models.CharField(max_length=50)
-    last_name = models.CharField(max_length=50)
-    username = models.CharField(max_length=50)
-    password = models.CharField(max_length=50)
-    role = models.CharField(max_length=50)
-    age = models.IntegerField()
-    location = models.ManyToManyField(Location)
-    def __str__(self):
-        return self.first_name
-    class Meta:
-       verbose_name = 'Пользователь'
-       verbose_name_plural = 'Пользователи'
-       ordering = ["username"]
+
 class Categories(models.Model):
     name = models.CharField(max_length=150)
 
@@ -34,8 +24,10 @@ class Categories(models.Model):
        verbose_name = 'Категория'
        verbose_name_plural = 'Категории'
 class Ad(models.Model):
+    from authentification.models import User
+
     name = models.SlugField(max_length=150)
-    author = models.ForeignKey(Users, on_delete=models.CASCADE, verbose_name = 'Пользователь', null=True)
+    author = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name = 'Пользователь', null=True)
     price = models.IntegerField()
     description = models.CharField(max_length=2000)
     is_published = models.BooleanField()
