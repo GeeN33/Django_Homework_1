@@ -7,76 +7,26 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import DetailView, ListView, CreateView, UpdateView, DeleteView
 from rest_framework.generics import ListAPIView, CreateAPIView, RetrieveAPIView, UpdateAPIView, DestroyAPIView
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.viewsets import ModelViewSet
 
-from ads.models import Ad, Categories, Users, Location
-from ads.serializers import LocationSerializers, UsersSerializers, UsersCreateSerializers, CategoriesSerializers, \
-    UsersUpdateSerializers, UsersDestroySerializers, AdSerializers
+from ads.permissions import SelectionPermission, SelectionDeletePermission
+from authentification.models import User
+from ads.models import Ad, Categories, Location, Selection
+from ads.serializers import LocationSerializers, AdSerializers, SelectionCreateSerializers, SelectionSerializers, \
+    SelectionDetaiSerializers, SelectionUpdateSerializers, SelectionDestroySerializers, CategoriesSerializers
 
 
 def index(request):
     if request.method == "GET":
         return JsonResponse({"status": "ok"}, safe=False, status=200)
 # Users
-class UsersListView(ListAPIView):
-    queryset = Users.objects.all()
-    serializer_class = UsersSerializers
-
-class UsersDetailView(RetrieveAPIView):
-    queryset = Users.objects.all()
-    serializer_class = UsersSerializers
-
-class UsersCreateView(CreateAPIView):
-    queryset = Users.objects.all()
-    serializer_class = UsersCreateSerializers
-
-class UsersUpdateView(UpdateAPIView):
-    queryset = Users.objects.all()
-    serializer_class = UsersUpdateSerializers
-
-class UsersDeleteView(DestroyAPIView):
-    queryset = Users.objects.all()
-    serializer_class = UsersDestroySerializers
-
-class UsersZView(ListView):
-    model = Users
-
-    def get(self, request, *args, **kwargs):
-        super().get(request, *args, **kwargs)
-        self.object_list = self.object_list.annotate(total_ads=Count('ad', filter=Q(ad__is_published=True)))
-
-        paginator = Paginator(self.object_list, settings.TOTAL_ON_PAGE)
-        page_number = request.GET.get("page")
-        page_obj = paginator.get_page(page_number)
-
-        users = []
-        for user in page_obj:
-            # total_ads = Ad.objects.filter(author_id=user, is_published=True).count()
-            users.append({
-                "id": user.id,
-                "username": user.username,
-                "first_name": user.first_name,
-                "last_name": user.last_name,
-                "role": user.role,
-                "age": user.age,
-                "locations": list(user.location.all().values_list("name", flat=True)),
-                "total_ads": user.total_ads
-                })
-        response = {
-            "items": users,
-            "total":paginator.count,
-            "num_pages": paginator.num_pages
-        }
-
-        return JsonResponse(response, safe=False, json_dumps_params={"ensure_ascii": True})
-        # rez = Users.objects.filter(age=24).count()
-        #
-        # return HttpResponse(rez)
 
 #Ad
 class AdListView(ListAPIView):
     queryset = Ad.objects.all()
     serializer_class = AdSerializers
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
 
@@ -108,7 +58,6 @@ class AdListView(ListAPIView):
 
         return super().get(self, request, *args, **kwargs)
 
-
 @method_decorator(csrf_exempt, name="dispatch")
 class AdUpdateView(UpdateView):
     model = Ad
@@ -123,7 +72,7 @@ class AdUpdateView(UpdateView):
         ad_data = json.loads(request.body)
 
         self.object.name = ad_data["name"]
-        self.object.author_id = Users.objects.get(id=ad_data["author"])
+        self.object.author_id = User.objects.get(id=ad_data["author"])
         self.object.price = ad_data["price"]
         self.object.description = ad_data["description"]
         self.object.category_id = Categories.objects.get(id=ad_data["category"])
@@ -134,7 +83,7 @@ class AdUpdateView(UpdateView):
           "id": self.object.id,
           "name": self.object.name,
           "author_id": self.object.author_id,
-          "author": Users.objects.get(id=self.object.author_id_id).first_name,
+          "author": User.objects.get(id=self.object.author_id_id).first_name,
           "price": self.object.price,
           "description": self.object.description,
           "is_published": self.object.is_published,
@@ -168,7 +117,7 @@ class AdDetailView(DetailView):
             "id": ad.id,
             "name": ad.name,
             "author_id": ad.author_id,
-            "author": Users.objects.get(id=ad.author_id).first_name,
+            "author": User.objects.get(id=ad.author_id).first_name,
             "price": ad.price,
             "description": ad.description,
             "is_published": ad.is_published,
@@ -182,8 +131,8 @@ class AdCreateView(CreateView):
      def post(self, request, *args, **kwargs):
           ad_data = json.loads(request.body)
           try:
-              author_obj = Users.objects.get(id=ad_data["author_id"])
-          except Users.DoesNotExist:
+              author_obj = User.objects.get(id=ad_data["author_id"])
+          except User.DoesNotExist:
               return JsonResponse({"error": "Users not"}, status=404)
           try:
               category_obj = Categories.objects.get(id=ad_data["category_id"])
@@ -227,7 +176,7 @@ class AdImageView(UpdateView):
           "id": self.object.id,
           "name": self.object.name,
           "author_id": self.object.author_id,
-          "author": Users.objects.get(id=self.object.author_id).first_name,
+          "author": User.objects.get(id=self.object.author_id).first_name,
           "price": self.object.price,
           "description": self.object.description,
           "is_published": self.object.is_published,
@@ -243,3 +192,27 @@ class CategoriesViewSet(ModelViewSet):
 class LocationViewSet(ModelViewSet):
     queryset = Location.objects.all()
     serializer_class = LocationSerializers
+
+class SelectionCreateView(CreateAPIView):
+    queryset = Selection.objects.all()
+    serializer_class = SelectionCreateSerializers
+    permission_classes = [IsAuthenticated, SelectionPermission]
+
+class SelectionListView(ListAPIView):
+    queryset = Selection.objects.all()
+    serializer_class = SelectionSerializers
+
+class SelectionDetailView(RetrieveAPIView):
+    queryset = Selection.objects.all()
+    serializer_class = SelectionDetaiSerializers
+
+
+class SelectionUpdateView(UpdateAPIView):
+    queryset = Selection.objects.all()
+    serializer_class = SelectionUpdateSerializers
+    permission_classes = [IsAuthenticated, SelectionPermission]
+
+class SelectionDeleteView(DestroyAPIView):
+    queryset = Selection.objects.all()
+    permission_classes = [IsAuthenticated, SelectionDeletePermission]
+
