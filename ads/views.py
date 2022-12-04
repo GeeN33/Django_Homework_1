@@ -10,6 +10,7 @@ from rest_framework.generics import ListAPIView, CreateAPIView, RetrieveAPIView,
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.viewsets import ModelViewSet
 
+from ads.permissions import SelectionPermission, SelectionDeletePermission
 from authentification.models import User
 from ads.models import Ad, Categories, Location, Selection
 from ads.serializers import LocationSerializers, AdSerializers, SelectionCreateSerializers, SelectionSerializers, \
@@ -195,7 +196,7 @@ class LocationViewSet(ModelViewSet):
 class SelectionCreateView(CreateAPIView):
     queryset = Selection.objects.all()
     serializer_class = SelectionCreateSerializers
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, SelectionPermission]
 
 class SelectionListView(ListAPIView):
     queryset = Selection.objects.all()
@@ -205,11 +206,13 @@ class SelectionDetailView(RetrieveAPIView):
     queryset = Selection.objects.all()
     serializer_class = SelectionDetaiSerializers
 
+
 class SelectionUpdateView(UpdateAPIView):
     queryset = Selection.objects.all()
     serializer_class = SelectionUpdateSerializers
+    permission_classes = [IsAuthenticated, SelectionPermission]
 
 class SelectionDeleteView(DestroyAPIView):
     queryset = Selection.objects.all()
-    serializer_class = SelectionDestroySerializers
+    permission_classes = [IsAuthenticated, SelectionDeletePermission]
 
