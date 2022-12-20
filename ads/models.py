@@ -1,7 +1,13 @@
+from django.core.exceptions import ValidationError
+from django.core.validators import MinValueValidator
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 
+from datetime import date
 
+def check_Categories(value):
+    if len(value) < 5 or len(value) > 10:
+        raise ValidationError('is not between 5 and 10')
 
 class Location(models.Model):
     name = models.CharField(max_length=40)
@@ -17,20 +23,21 @@ class Location(models.Model):
 
 class Categories(models.Model):
     name = models.CharField(max_length=150)
-
+    slug = models.SlugField(null=True, unique=True, validators=[check_Categories])
     def __str__(self):
         return self.name
     class Meta:
        verbose_name = 'Категория'
        verbose_name_plural = 'Категории'
+
 class Ad(models.Model):
     from authentification.models import User
 
-    name = models.SlugField(max_length=150)
+    name = models.SlugField(max_length=150, blank=False)
     author = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name = 'Пользователь', null=True)
-    price = models.IntegerField()
-    description = models.CharField(max_length=2000)
-    is_published = models.BooleanField()
+    price = models.IntegerField(validators=[MinValueValidator(0)])
+    description = models.CharField(max_length=2000, blank=False)
+    is_published = models.BooleanField(blank=False)
     image = models.ImageField(upload_to='images/', null=True, blank=True)
     category = models.ForeignKey(Categories, on_delete=models.CASCADE, verbose_name='Категория', null=True)
     def __str__(self):

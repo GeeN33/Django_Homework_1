@@ -14,7 +14,8 @@ from ads.permissions import SelectionPermission, SelectionDeletePermission
 from authentification.models import User
 from ads.models import Ad, Categories, Location, Selection
 from ads.serializers import LocationSerializers, AdSerializers, SelectionCreateSerializers, SelectionSerializers, \
-    SelectionDetaiSerializers, SelectionUpdateSerializers, SelectionDestroySerializers, CategoriesSerializers
+    SelectionDetaiSerializers, SelectionUpdateSerializers, SelectionDestroySerializers, CategoriesSerializers, \
+    AdCreateSerializers
 
 
 def index(request):
@@ -26,7 +27,7 @@ def index(request):
 class AdListView(ListAPIView):
     queryset = Ad.objects.all()
     serializer_class = AdSerializers
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
 
@@ -116,47 +117,16 @@ class AdDetailView(DetailView):
         return JsonResponse({
             "id": ad.id,
             "name": ad.name,
-            "author_id": ad.author_id,
-            "author": User.objects.get(id=ad.author_id).first_name,
+            "author": ad.author.first_name,
             "price": ad.price,
             "description": ad.description,
             "is_published": ad.is_published,
-            "category_id": ad.category_id,
-            "image": ad.image.url if ad.image else ""
+            "category": ad.category.name,
            }, safe=False, json_dumps_params={"ensure_ascii": True})
 
-@method_decorator(csrf_exempt, name="dispatch")
-class AdCreateView(CreateView):
-     model = Ad
-     def post(self, request, *args, **kwargs):
-          ad_data = json.loads(request.body)
-          try:
-              author_obj = User.objects.get(id=ad_data["author_id"])
-          except User.DoesNotExist:
-              return JsonResponse({"error": "Users not"}, status=404)
-          try:
-              category_obj = Categories.objects.get(id=ad_data["category_id"])
-          except Categories.DoesNotExist:
-              return JsonResponse({"error": "Categories not"}, status=404)
-
-          ad = Ad.objects.create(
-              name = ad_data["name"],
-              author = author_obj,
-              price = ad_data["price"],
-              description = ad_data["description"],
-              is_published = ad_data["is_published"],
-              category = category_obj
-          )
-
-          return JsonResponse({
-              "id": ad.id,
-              "name": ad.name,
-              "author_id": ad.author_id,
-              "price": ad.price,
-              "description" : ad.description,
-              "is_published" : ad.is_published,
-              "category_id" : ad.category_id
-          }, safe=False, json_dumps_params={"ensure_ascii": True})
+class AdCreateView(CreateAPIView):
+    queryset = Ad.objects.all()
+    serializer_class = AdCreateSerializers
 
 @method_decorator(csrf_exempt, name="dispatch")
 class AdImageView(UpdateView):
